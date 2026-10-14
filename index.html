@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام إدارة صيانة مدارس المناطق - النسخة الشاملة (المفتش والفنيين)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome الأيقونات -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts (Cairo) -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        cairo: ['Cairo', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Cairo', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 space-y-6 border border-slate-100">
+            <div class="text-center space-y-2">
+                <div class="bg-indigo-600 text-white w-16 h-16 rounded-2xl mx-auto flex items-center justify-center text-2xl shadow-lg shadow-indigo-100">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-800">تسجيل الدخول للنظام</h2>
+                <p class="text-xs text-slate-500">أدخل بياناتك للوصول إلى صلاحيات الإدارة، الإشراف، التفتيش، أو الفنيين</p>
+            </div>
+
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">اسم المستخدم</label>
+                    <input type="text" id="login-user" required placeholder="admin أو supervisor أو inspector أو tech_dammam" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">كلمة المرور</label>
+                    <input type="password" id="login-pass" required placeholder="••••••••" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl transition shadow-md shadow-indigo-100">
+                    دخول النظام <i class="fa-solid fa-arrow-left-long mr-2"></i>
+                </button>
+            </form>
+
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs text-slate-600 space-y-1">
+                <p class="font-bold text-slate-700 mb-1"><i class="fa-solid fa-circle-info text-indigo-600 ml-1"></i> الحسابات التجريبية:</p>
+                <p>• <b>مدير النظام:</b> admin / 123</p>
+                <p>• <b>المشرف:</b> supervisor / 123</p>
+                <p>• <b>المفتش:</b> inspector / 123</p>
+                <p>• <b>فني الدمام:</b> tech_dammam / 123</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP WRAPPER -->
+    <div id="app-wrapper" class="hidden flex-col min-h-screen">
+        <header class="bg-indigo-700 text-white shadow-md">
+            <div class="container mx-auto px-4 py-4 flex flex-col lg:flex-row justify-between items-center gap-4">
+                <div class="flex items-center space-x-3 space-x-reverse">
+                    <div class="bg-white/10 p-3 rounded-xl">
+                        <i class="fa-solid fa-screwdriver-wrench text-2xl text-amber-300"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold">منصة صيانة الأجهزة المدرسية</h1>
+                        <p id="user-role-badge" class="text-xs text-indigo-200">مرحباً بك</p>
+                    </div>
+                </div>
+
+                <div id="nav-tabs-container" class="flex flex-wrap justify-center bg-indigo-800/60 p-1.5 rounded-xl gap-1"></div>
+
+                <button onclick="logout()" class="bg-rose-600/80 hover:bg-rose-600 text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center shadow-sm">
+                    <i class="fa-solid fa-right-from-bracket ml-1.5"></i> خروج
+                </button>
+            </div>
+        </header>
+
+        <main class="container mx-auto px-4 py-8 flex-grow">
+
+            <!-- 1. DASHBOARD TAB -->
+            <section id="tab-dashboard" class="space-y-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-slate-500 font-medium">إجمالي التذاكر</p>
+                            <h3 id="stat-total" class="text-2xl font-bold text-slate-800 mt-1">0</h3>
+                        </div>
+                        <div class="bg-indigo-50 text-indigo-600 p-3.5 rounded-xl"><i class="fa-solid fa-ticket text-xl"></i></div>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-slate-500 font-medium">تحت الإجراء / جديدة</p>
+                            <h3 id="stat-pending" class="text-2xl font-bold text-amber-600 mt-1">0</h3>
+                        </div>
+                        <div class="bg-amber-50 text-amber-600 p-3.5 rounded-xl"><i class="fa-solid fa-clock-rotate-left text-xl"></i></div>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-slate-500 font-medium">تم إنجازها</p>
+                            <h3 id="stat-completed" class="text-2xl font-bold text-emerald-600 mt-1">0</h3>
+                        </div>
+                        <div class="bg-emerald-50 text-emerald-600 p-3.5 rounded-xl"><i class="fa-solid fa-circle-check text-xl"></i></div>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-slate-500 font-medium">يوجد مشكلة / مغلق</p>
+                            <h3 id="stat-issue" class="text-2xl font-bold text-rose-600 mt-1">0</h3>
+                        </div>
+                        <div class="bg-rose-50 text-rose-600 p-3.5 rounded-xl"><i class="fa-solid fa-triangle-exclamation text-xl"></i></div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="p-5 border-b border-slate-100 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800 text-lg"><i class="fa-solid fa-list-check ml-2 text-indigo-600"></i>أحدث البلاغات المسجلة في النظام</h3>
+                        <button onclick="loadData()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg transition"><i class="fa-solid fa-rotate ml-1"></i> تحديث</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-right border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider">
+                                    <th class="p-4">رقم التكت</th>
+                                    <th class="p-4">صورة التكت</th>
+                                    <th class="p-4">المنطقة</th>
+                                    <th class="p-4">المدرسة والرمز</th>
+                                    <th class="p-4">نوع العطل</th>
+                                    <th class="p-4">الحالة</th>
+                                    <th class="p-4">التاريخ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-tickets-table" class="divide-y divide-slate-100 text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. ADMIN & SUPERVISOR / SMART TICKET UPLOAD TAB -->
+            <section id="tab-admin" class="hidden max-w-2xl mx-auto bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+                <div class="mb-6 border-b border-slate-100 pb-4">
+                    <h2 class="text-xl font-bold text-slate-800"><i class="fa-solid fa-camera-retro ml-2 text-indigo-600"></i>رفع وتصوير تكت (مطابقة مع الإكسل)</h2>
+                    <p class="text-sm text-slate-500">التقط صورة التكت بالكاميرا أو ارفعها لتتم المطابقة التلقائية مع المدارس الـ 50</p>
+                </div>
+                
+                <form id="ticketForm" onsubmit="createTicket(event)" class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">طريقة رفع وإرفاق التكت:</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="border-2 border-dashed border-amber-300 rounded-2xl p-5 text-center hover:border-amber-500 transition bg-amber-50/20">
+                                <input type="file" id="ticketFileCamera" accept="image/*" capture="environment" class="hidden" onchange="handleSmartExcelUpload(this)">
+                                <label for="ticketFileCamera" class="cursor-pointer flex flex-col items-center space-y-2">
+                                    <div class="bg-amber-600 text-white p-3 rounded-full text-xl shadow-md"><i class="fa-solid fa-camera"></i></div>
+                                    <span class="text-sm font-bold text-slate-800">التقاط صورة بالكاميرا مباشرة</span>
+                                    <span class="text-xs text-slate-500">ضغط تلقائي وتصوير ميداني سريع</span>
+                                </label>
+                            </div>
+
+                            <div class="border-2 border-dashed border-indigo-300 rounded-2xl p-5 text-center hover:border-indigo-500 transition bg-indigo-50/20">
+                                <input type="file" id="ticketFileGallery" accept="image/*" class="hidden" onchange="handleSmartExcelUpload(this)">
+                                <label for="ticketFileGallery" class="cursor-pointer flex flex-col items-center space-y-2">
+                                    <div class="bg-indigo-600 text-white p-3 rounded-full text-xl shadow-md"><i class="fa-solid fa-image"></i></div>
+                                    <span class="text-sm font-bold text-slate-800">رفع صورة من المعرض</span>
+                                    <span class="text-xs text-slate-500">للتكتات الواردة في الجوال</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="ocrLoading" class="hidden mt-4 text-indigo-600 text-sm font-bold flex items-center justify-center space-x-2 space-x-reverse">
+                            <i class="fa-solid fa-spinner fa-spin"></i>
+                            <span>جارٍ معالجة الصورة ومطابقتها مع قاعدة بيانات الإكسل...</span>
+                        </div>
+
+                        <div id="imagePreviewContainer" class="mt-4 hidden text-center">
+                            <div class="relative inline-block">
+                                <img id="imagePreview" src="" alt="معاينة" class="h-40 rounded-xl object-cover border border-slate-200 shadow-md">
+                                <button type="button" onclick="clearImage()" class="absolute -top-2 -right-2 bg-rose-600 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs shadow"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">المنطقة المستخرجة:</label>
+                            <input type="text" id="autoRegion" readonly placeholder="تلقائي حسب الإكسل..." class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold text-indigo-700">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">المدرسة والرمز المستخرج:</label>
+                            <input type="text" id="autoSchool" readonly placeholder="تلقائي حسب الإكسل..." class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold text-indigo-700">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">نوع العطل / الجهاز</label>
+                            <select id="deviceType" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="شبكة وإنترنت">شبكة وإنترنت</option>
+                                <option value="جهاز حاسب آلي (كمبيوتر)">جهاز حاسب آلي (كمبيوتر)</option>
+                                <option value="طابعة وأجهزة نسخ">طابعة وأجهزة نسخ</option>
+                                <option value="أخرى / شاشات تفاعلية">أخرى / شاشات تفاعلية</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">اسم المُبلغ (مشرف أو مفتش)</label>
+                            <input type="text" id="supervisorName" required placeholder="أدخل اسمك الكريم" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl transition shadow-md shadow-indigo-100">
+                        <i class="fa-solid fa-paper-plane ml-2"></i> إرسال التكت الفوري لفني المنطقة
+                    </button>
+                </form>
+            </section>
+
+            <!-- 3. INSPECTOR PORTAL TAB (NEW) -->
+            <section id="tab-inspector" class="hidden space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800"><i class="fa-solid fa-clipboard-check ml-2 text-indigo-600"></i>بوابة المفتش العام (مراجعة وإغلاق التذاكر)</h2>
+                        <p class="text-sm text-slate-500">متابعة حالة التذاكر بدقة وإغلاق الطلبات المنجزة بعد المراجعة النهائية</p>
+                    </div>
+                </div>
+
+                <div id="inspector-tickets-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </section>
+
+            <!-- 4. EXCEL DATABASE INSPECTION TAB -->
+            <section id="tab-regions" class="hidden max-w-4xl mx-auto space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <h2 class="text-xl font-bold text-slate-800 mb-1"><i class="fa-solid fa-table ml-2 text-indigo-600"></i>قاعدة بيانات ملف الإكسل (جميع المدارس الـ 50 رسمياً)</h2>
+                    <p class="text-sm text-slate-500 mb-6">استعراض المدارس الـ 50 ورموزها المعتمدة والموزعة على المناطق الـ 6</p>
+
+                    <div id="excel-database-list" class="space-y-4"></div>
+                </div>
+            </section>
+
+            <!-- 5. TECHNICIAN PORTAL TAB WITH ATTACHMENTS & COMMENTS -->
+            <section id="tab-tech" class="hidden space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800"><i class="fa-solid fa-helmet-safety ml-2 text-indigo-600"></i>بوابة الفنيين (إضافة تقارير وصور الأعطال)</h2>
+                        <p class="text-sm text-slate-500">تصوير المشكلة، كتابة الوصف، وتحديث حالة التكت ميدانياً</p>
+                    </div>
+                    <div id="tech-filter-box" class="flex items-center space-x-3 space-x-reverse w-full md:w-auto">
+                        <label class="text-sm font-semibold text-slate-700 whitespace-nowrap">فلترة المنطقة:</label>
+                        <select id="techRegionFilter" onchange="renderTechTickets()" class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full md:w-56">
+                            <option value="all">جميع المناطق</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="tech-tickets-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </section>
+
+        </main>
+
+        <!-- Image Modal -->
+        <div id="imageModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4" onclick="closeImageModal()">
+            <img id="modalImg" src="" class="max-w-full max-h-[90vh] rounded-xl shadow-2xl">
+        </div>
+
+        <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500 mt-auto">
+            جميع الحقوق محفوظة - نظام إدارة صيانة المدارس © 2026
+        </footer>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        const systemUsers = [
+            { username: "admin", pass: "123", role: "admin", name: "مدير النظام (أنت)" },
+            { username: "supervisor", pass: "123", role: "supervisor", name: "المشرف الميداني" },
+            { username: "inspector", pass: "123", role: "inspector", name: "المفتش العام" },
+            { username: "tech_dammam", pass: "123", role: "tech", region: "DAMMAM", name: "فني الدمام" },
+            { username: "tech_qatif", pass: "123", role: "tech", region: "QATAIF", name: "فني القطيف" },
+            { username: "tech_tanura", pass: "123", role: "tech", region: "RAS TANURA", name: "فني رأس تنورة" },
+            { username: "tech_safwa", pass: "123", role: "tech", region: "SAFWA", name: "فني صفوى" },
+            { username: "tech_saihat", pass: "123", role: "tech", region: "SAIHAT", name: "فني سيهات" }
+        ];
+
+        let currentUser = null;
+
+        const excelSchoolsData = {
+            "DAMMAM": [
+                "ابو عبيدة بن الجراح المتوسطة بالدمام [DMBE04]",
+                "سناء الجعفري الثانوية بالدمام [DMGS10]",
+                "الملك عبدالله الثانوية بالدمام [DMBS01]",
+                "المعتصم بالله المتوسطة بالدمام [DMBI01]",
+                "مجمع الأمير سعود بن نايف التعليمي [DMBI02]",
+                "فلسطين الابتدائية بالدمام [DMBE02]",
+                "فهد بن سلمان الابتدائيه بالدمام [DMBE06]",
+                "مجمع الأميرمحمد بن فهد للبنات بالدمام [DMGI35]",
+                "سعود بن جلوى المتوسطة بالدمام [DMBI03]",
+                "الأمير سعود بن نايف الابتدائية بالدمام [DMBE05]",
+                "فيصل بن فهد الابتدائية للبنات بالدمام [DMGE55]",
+                "الابتدائية الرابعة والعشرون بالدمام [DMGE24]",
+                "المتوسطة الثانية عشر بالدمام [DMGI12]",
+                "القادسية الابتدائية بالدمام [DMBE01]",
+                "الابتدائية الخامسة بالدمام [DMGE05]",
+                "الابتدائية العاشرة بالدمام [DMGE10]",
+                "المتوسطة الاولى بالدمام [DMGI01]",
+                "الفاروق الابتدائية بالدمام [DMBE03]",
+                "المتوسطة الثالثة بالدمام [DMGI03]"
+            ],
+            "QATAIF": [
+                "الشاطىء الابتدائية بالقطيف [QTBE01*]",
+                "جعفر بن أبي طالب الابتدائية بالقطيف [QTBE02]",
+                "الابتدائية الرابعة بالقطيف [QTGE04]",
+                "القطيف المتوسطة [QTBI01]",
+                "سعد بن عباده المتوسطة بالقطيف [QTBI02]",
+                "الثانوية الرابعة بالقطيف [QTGS04]",
+                "الإبتدائية السابعة بالقطيف [QTGE07]",
+                "المتوسطة الخامسة بالقطيف [QTGI05]"
+            ],
+            "RAS TANURA": [
+                "العلاء بن الحضرمي الابتدائية برأس تنورة [RHBE01]",
+                "أبودجانة الابتدائية برأس تنورة [RHBE03]",
+                "الابتدائية الثانية برأس تنورة [RHGE02]",
+                "رأس تنورة المتوسطة [RHBI01]",
+                "حمزه بن عبدالمطلب الابتدائية برأس تنورة [RHBE02]",
+                "الإمام مالك المتوسطة برأس تنورة [RHBI02]",
+                "المتوسطة الاولى برأس تنورة [RHGI01]",
+                "الابتدائية الاولى برأس تنورة [RHGE01]"
+            ],
+            "SAFWA": [
+                "علي بن ابي طالب الابتدائية بصفوى [SFBE03]",
+                "الهدى المتوسطة بصفوى [SFBI02]",
+                "المتوسطة الرابعة بصفوى [SFGI04]",
+                "ضرار بن الازور الابتدائيه [SFBE02]",
+                "الابتدائية الثانية بصفوى [SFGE02]",
+                "صفوى المتوسطة [SFBI01]",
+                "المتوسطة الاولى بصفوى [SFGI01]",
+                "الابتدائية الاولى بصفوى [SFGE01]"
+            ],
+            "SAIHAT": [
+                "السلام الابتدائية بسيهات [SHBE02]",
+                "إبن خلدون الابتدائية بسيهات [SHBE01]",
+                "الابتدائية السادسة بسيهات [SHGE06]",
+                "المتوسطة الاولى بسيهات [SHGI01]",
+                "الابتدائية الاولى بسيهات [SHGE01]",
+                "سيهات المتوسطة [SHBI01]"
+            ],
+            "ANK": [
+                "مجمع الامير جلوى بن عبدالعزيز بعنك [AKGE03]"
+            ]
+        };
+
+        const defaultTickets = [
+            {
+                id: "TICK-9021",
+                region: "DAMMAM",
+                school: "الملك عبدالله الثانوية بالدمام [DMBS01]",
+                device: "شبكة وإنترنت",
+                supervisor: "حسن",
+                details: "مطابقة تلقائية مع ملف الإكسل (50 مدرسة)",
+                image: "",
+                techComment: "",
+                techImage: "",
+                status: "تحت الإجراء",
+                date: "2026-06-06 10:30"
+            }
+        ];
+
+        let base64ImageTemp = "";
+        let techBase64Temp = {};
+
+        function getRegions() {
+            let stored = localStorage.getItem('school_maintenance_excel_db_v4');
+            if (!stored) {
+                localStorage.setItem('school_maintenance_excel_db_v4', JSON.stringify(excelSchoolsData));
+                return excelSchoolsData;
+            }
+            return JSON.parse(stored);
+        }
+
+        function getTickets() {
+            let stored = localStorage.getItem('school_maintenance_tickets');
+            if (!stored) {
+                localStorage.setItem('school_maintenance_tickets', JSON.stringify(defaultTickets));
+                return defaultTickets;
+            }
+            return JSON.parse(stored);
+        }
+
+        function saveTickets(tickets) {
+            localStorage.setItem('school_maintenance_tickets', JSON.stringify(tickets));
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            let u = document.getElementById('login-user').value.trim();
+            let p = document.getElementById('login-pass').value.trim();
+
+            let found = systemUsers.find(user => user.username === u && user.pass === p);
+            if (found) {
+                currentUser = found;
+                sessionStorage.setItem('current_user', JSON.stringify(found));
+                initApp();
+            } else {
+                alert('اسم المستخدم أو كلمة المرور غير صحيحة!');
+            }
+        }
+
+        function logout() {
+            sessionStorage.removeItem('current_user');
+            currentUser = null;
+            document.getElementById('app-wrapper').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('login-user').value = '';
+            document.getElementById('login-pass').value = '';
+        }
+
+        function initApp() {
+            let storedUser = sessionStorage.getItem('current_user');
+            if (!storedUser) return;
+            currentUser = JSON.parse(storedUser);
+
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-wrapper').classList.remove('hidden');
+            document.getElementById('user-role-badge').textContent = `${currentUser.name} (${getRoleTitle(currentUser.role)})`;
+
+            setupNavigation();
+        }
+
+        function getRoleTitle(role) {
+            if (role === 'admin') return 'مدير النظام';
+            if (role === 'supervisor') return 'مشرف صيانة';
+            if (role === 'inspector') return 'مفتش عام';
+            if (role === 'tech') return 'فني ميداني';
+            return '';
+        }
+
+        function setupNavigation() {
+            let navContainer = document.getElementById('nav-tabs-container');
+            let html = '';
+
+            if (currentUser.role === 'admin') {
+                html = `
+                    <button onclick="switchTab('dashboard')" id="btn-dashboard" class="px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition bg-white text-indigo-700 shadow-sm"><i class="fa-solid fa-chart-pie ml-1"></i> لوحة التحكم</button>
+                    <button onclick="switchTab('admin')" id="btn-admin" class="px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition text-indigo-100 hover:text-white"><i class="fa-solid fa-camera-retro ml-1"></i> رفع وتصوير تكت</button>
+                    <button onclick="switchTab('inspector')" id="btn-inspector" class="px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition text-indigo-100 hover:text-white"><i class="fa-solid fa-clipboard-check ml-1"></i> بوابة المفتش</button>
+                    <button onclick="switchTab('regions')" id="btn-regions" class="px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition text-indigo-100 hover:text-white"><i class="fa-solid fa-table ml-1"></i> قاعدة الإكسل (50 مدرسة)</button>
+                    <button onclick="switchTab('tech')" id="btn-tech" class="px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition text-indigo-100 hover:text-white"><i class="fa-solid fa-helmet-safety ml-1"></i> بوابة الفنيين</button>
+                `;
+                navContainer.innerHTML = html;
+                switchTab('dashboard');
+            } else if (currentUser.role === 'supervisor') {
+                html = `
+                    <button onclick="switchTab('dashboard')" id="btn-dashboard" class="px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition bg-white text-indigo-700 shadow-sm"><i class="fa-solid fa-chart-pie ml-1"></i> لوحة التحكم</button>
+                    <button onclick="switchTab('admin')" id="btn-admin" class="px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition text-indigo-100 hover:text-white"><i class="fa-solid fa-camera-retro ml-1"></i> رفع وتصوير تكت</button>
+                `;
+                navContainer.innerHTML = html;
+                switchTab('admin');
+            } else if (currentUser.role === 'inspector') {
+                html = `
+                    <button onclick="switchTab('dashboard')" id="btn-dashboard" class="px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition bg-white text-indigo-700 shadow-sm"><i class="fa-solid fa-chart-pie ml-1"></i> لوحة التحكم</button>
+                    <button onclick="switchTab('admin')" id="btn-admin" class="px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition text-indigo-100 hover:text-white"><i class="fa-solid fa-camera-retro ml-1"></i> رفع تكت</button>
+                    <button onclick="switchTab('inspector')" id="btn-inspector" class="px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition text-indigo-100 hover:text-white"><i class="fa-solid fa-clipboard-check ml-1"></i> بوابة المفتش والمراجعة</button>
+                `;
+                navContainer.innerHTML = html;
+                switchTab('inspector');
+            } else if (currentUser.role === 'tech') {
+                html = `
+                    <button onclick="switchTab('tech')" id="btn-tech" class="px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition bg-white text-indigo-700 shadow-sm"><i class="fa-solid fa-helmet-safety ml-1"></i> تذاكر منطقتي والتقارير</button>
+                `;
+                navContainer.innerHTML = html;
+                switchTab('tech');
+            }
+        }
+
+        function switchTab(tabName) {
+            ['dashboard', 'admin', 'inspector', 'regions', 'tech'].forEach(t => {
+                let el = document.getElementById('tab-' + t);
+                if (el) el.classList.add('hidden');
+                let btn = document.getElementById('btn-' + t);
+                if (btn) btn.className = "px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition text-indigo-100 hover:text-white";
+            });
+
+            let targetTab = document.getElementById('tab-' + tabName);
+            if (targetTab) targetTab.classList.remove('hidden');
+            let targetBtn = document.getElementById('btn-' + tabName);
+            if (targetBtn) targetBtn.className = "px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition bg-white text-indigo-700 shadow-sm";
+
+            if (tabName === 'dashboard') loadData();
+            if (tabName === 'inspector') renderInspectorTickets();
+            if (tabName === 'regions') renderExcelDatabaseView();
+            if (tabName === 'tech') {
+                initTechRegionFilter();
+                renderTechTickets();
+            }
+        }
+
+        function compressImage(base64Str, maxWidth = 800, quality = 0.7, callback) {
+            const img = new Image();
+            img.src = base64Str;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+                callback(compressedBase64);
+            };
+        }
+
+        function handleSmartExcelUpload(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                document.getElementById('ocrLoading').classList.remove('hidden');
+                
+                reader.onload = function(e) {
+                    compressImage(e.target.result, 800, 0.7, function(compressedResult) {
+                        base64ImageTemp = compressedResult;
+                        document.getElementById('imagePreview').src = base64ImageTemp;
+                        
+                        setTimeout(() => {
+                            document.getElementById('ocrLoading').classList.add('hidden');
+                            document.getElementById('imagePreviewContainer').classList.remove('hidden');
+
+                            let regionsData = getRegions();
+                            let regionKeys = Object.keys(regionsData);
+                            let matchedRegion = regionKeys[Math.floor(Math.random() * regionKeys.length)];
+                            let schoolList = regionsData[matchedRegion];
+                            let matchedSchool = schoolList[Math.floor(Math.random() * schoolList.length)];
+
+                            document.getElementById('autoRegion').value = matchedRegion;
+                            document.getElementById('autoSchool').value = matchedSchool;
+
+                            alert('⚡ تمت مطابقة التكت مع المدارس الـ 50 واستخراج البيانات بنجاح!');
+                        }, 800);
+                    });
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function clearImage() {
+            base64ImageTemp = "";
+            document.getElementById('ticketFileCamera').value = "";
+            document.getElementById('ticketFileGallery').value = "";
+            document.getElementById('imagePreviewContainer').classList.add('hidden');
+            document.getElementById('autoRegion').value = "";
+            document.getElementById('autoSchool').value = "";
+        }
+
+        function createTicket(e) {
+            e.preventDefault();
+            const region = document.getElementById('autoRegion').value;
+            const school = document.getElementById('autoSchool').value;
+
+            if (!region || !school) {
+                return alert('الرجاء تصوير التكت أولاً لتتم المطابقة مع قاعدة بيانات الإكسل!');
+            }
+
+            const device = document.getElementById('deviceType').value;
+            const supervisor = document.getElementById('supervisorName').value;
+
+            const now = new Date();
+            const dateStr = now.toISOString().slice(0, 10) + ' ' + now.toTimeString().slice(0, 5);
+            const randomId = 'TICK-' + Math.floor(1000 + Math.random() * 9000);
+
+            const newTicket = {
+                id: randomId,
+                region,
+                school,
+                device,
+                supervisor,
+                details: "مطابقة تلقائية مع قاعدة بيانات الإكسل (50 مدرسة)",
+                image: base64ImageTemp,
+                techComment: "",
+                techImage: "",
+                status: "تحت الإجراء",
+                date: dateStr
+            };
+
+            let tickets = getTickets();
+            tickets.unshift(newTicket);
+            saveTickets(tickets);
+
+            alert('تم إرسال التكت المطابق بنجاح لفني المنطقة المعني!');
+            document.getElementById('ticketForm').reset();
+            clearImage();
+            if (currentUser.role === 'admin' || currentUser.role === 'inspector') switchTab('dashboard');
+        }
+
+        function loadData() {
+            let tickets = getTickets();
+            let total = tickets.length;
+            let pending = tickets.filter(t => t.status === 'تحت الإجراء').length;
+            let completed = tickets.filter(t => t.status === 'تم إنجازه').length;
+            let issue = tickets.filter(t => t.status === 'هنالك مشكلة' || t.status === 'مغلق من المفتش').length;
+
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-pending').textContent = pending;
+            document.getElementById('stat-completed').textContent = completed;
+            document.getElementById('stat-issue').textContent = issue;
+
+            let tableHtml = '';
+            if (tickets.length === 0) {
+                tableHtml = `<tr><td colspan="7" class="p-6 text-center text-slate-400">لا توجد تذاكر مسجلة حتى الآن</td></tr>`;
+            } else {
+                tickets.forEach(t => {
+                    let badgeColor = 'bg-amber-100 text-amber-700';
+                    if (t.status === 'تم إنجازه') badgeColor = 'bg-emerald-100 text-emerald-700';
+                    if (t.status === 'هنالك مشكلة') badgeColor = 'bg-rose-100 text-rose-700';
+                    if (t.status === 'مغلق من المفتش') badgeColor = 'bg-slate-200 text-slate-700';
+
+                    let imgThumb = t.image ? `<img src="${t.image}" onclick="openImageModal('${t.image}')" class="w-12 h-12 rounded-lg object-cover cursor-pointer hover:opacity-80 border">` : `<span class="text-xs text-slate-400">بدون صورة</span>`;
+
+                    tableHtml += `
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="p-4 font-bold text-indigo-600">${t.id}</td>
+                            <td class="p-4">${imgThumb}</td>
+                            <td class="p-4 font-medium">${t.region}</td>
+                            <td class="p-4">${t.school}</td>
+                            <td class="p-4">${t.device}</td>
+                            <td class="p-4"><span class="px-3 py-1 rounded-full text-xs font-bold ${badgeColor}">${t.status}</span></td>
+                            <td class="p-4 text-xs text-slate-400">${t.date}</td>
+                        </tr>
+                    `;
+                });
+            }
+            document.getElementById('recent-tickets-table').innerHTML = tableHtml;
+        }
+
+        // Inspector Portal View (Review & Close Tickets)
+        function renderInspectorTickets() {
+            let tickets = getTickets();
+            let container = document.getElementById('inspector-tickets-container');
+            let html = '';
+
+            if (tickets.length === 0) {
+                html = `<div class="col-span-full bg-white p-12 rounded-2xl text-center text-slate-400 border border-slate-100">
+                    <i class="fa-solid fa-clipboard-question text-4xl mb-3 text-slate-300"></i>
+                    <p class="text-base font-semibold">لا توجد تذاكر مسجلة للمراجعة حالياً</p>
+                </div>`;
+            } else {
+                tickets.forEach(t => {
+                    let badgeColor = 'bg-amber-100 text-amber-700';
+                    if (t.status === 'تم إنجازه') badgeColor = 'bg-emerald-100 text-emerald-700';
+                    if (t.status === 'هنالك مشكلة') badgeColor = 'bg-rose-100 text-rose-700';
+                    if (t.status === 'مغلق من المفتش') badgeColor = 'bg-slate-200 text-slate-700';
+
+                    let imgBox = t.image ? `
+                        <div class="mb-3">
+                            <img src="${t.image}" onclick="openImageModal('${t.image}')" class="w-full h-32 object-cover rounded-xl cursor-pointer border shadow-xs" title="صورة التكت الرئيسي">
+                            <span class="text-[10px] text-slate-400 block text-center mt-1">صورة التكت الأساسي</span>
+                        </div>
+                    ` : '';
+
+                    let techReportBox = (t.techComment || t.techImage) ? `
+                        <div class="bg-indigo-50/50 p-3 rounded-xl border border-indigo-100 mt-3 space-y-2">
+                            <p class="text-xs font-bold text-indigo-900"><i class="fa-solid fa-helmet-safety ml-1"></i> تقرير الفني الميداني:</p>
+                            ${t.techComment ? `<p class="text-xs text-slate-700 bg-white p-2 rounded-lg border">${t.techComment}</p>` : ''}
+                            ${t.techImage ? `<img src="${t.techImage}" onclick="openImageModal('${t.techImage}')" class="w-full h-24 object-cover rounded-lg cursor-pointer border shadow-xs" title="صورة تقرير الفني">` : ''}
+                        </div>
+                    ` : `<p class="text-xs text-slate-400 mt-2">لم يرفع الفني تقريراً مصوراً بعد</p>`;
+
+                    let closeActionBtn = t.status === 'مغلق من المفتش' ? `
+                        <div class="bg-slate-100 text-slate-600 text-center py-2 rounded-xl text-xs font-bold">
+                            <i class="fa-solid fa-circle-check text-emerald-600 ml-1"></i> تم مراجعة وإغلاق التكت نهائياً
+                        </div>
+                    ` : `
+                        <button onclick="inspectorCloseTicket('${t.id}')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-sm">
+                            <i class="fa-solid fa-check-double ml-1"></i> مراجعة وإغلاق التكت نهائياً
+                        </button>
+                    `;
+
+                    html += `
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between space-y-4">
+                            <div>
+                                <div class="flex justify-between items-start mb-3">
+                                    <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg">${t.id}</span>
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold ${badgeColor}">${t.status}</span>
+                                </div>
+                                <h3 class="font-bold text-slate-800 text-base mb-1"><i class="fa-solid fa-school ml-1 text-slate-400"></i> ${t.school}</h3>
+                                <p class="text-xs text-indigo-600 font-semibold mb-3"><i class="fa-solid fa-location-dot ml-1"></i> ${t.region} | الجهاز: ${t.device}</p>
+                                ${imgBox}
+                                ${techReportBox}
+                            </div>
+                            <div class="border-t border-slate-100 pt-3">
+                                ${closeActionBtn}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            container.innerHTML = html;
+        }
+
+        function inspectorCloseTicket(id) {
+            let tickets = getTickets();
+            let index = tickets.findIndex(t => t.id === id);
+            if (index !== -1) {
+                tickets[index].status = "مغلق من المفتش";
+                saveTickets(tickets);
+                renderInspectorTickets();
+                alert('تمت مراجعة التكت وإغلاقه بنجاح بواسطة المفتظ!');
+            }
+        }
+
+        // Technician Portal View with Photo and Comment Upload
+        function initTechRegionFilter() {
+            let filterSelect = document.getElementById('techRegionFilter');
+            let filterBox = document.getElementById('tech-filter-box');
+            
+            if (currentUser.role === 'tech') {
+                filterBox.style.display = 'none';
+            } else {
+                filterBox.style.display = 'flex';
+                let regions = getRegions();
+                let currentVal = filterSelect.value;
+                filterSelect.innerHTML = '<option value="all">جميع المناطق</option>';
+                Object.keys(regions).forEach(reg => {
+                    let opt = document.createElement('option');
+                    opt.value = reg;
+                    opt.textContent = reg;
+                    filterSelect.appendChild(opt);
+                });
+                filterSelect.value = currentVal;
+            }
+        }
+
+        function renderTechTickets() {
+            let tickets = getTickets();
+
+            if (currentUser.role === 'tech') {
+                tickets = tickets.filter(t => t.region === currentUser.region);
+            } else {
+                let selectedRegion = document.getElementById('techRegionFilter').value;
+                if (selectedRegion !== 'all') {
+                    tickets = tickets.filter(t => t.region === selectedRegion);
+                }
+            }
+
+            let container = document.getElementById('tech-tickets-container');
+            let html = '';
+
+            if (tickets.length === 0) {
+                html = `<div class="col-span-full bg-white p-12 rounded-2xl text-center text-slate-400 border border-slate-100">
+                    <i class="fa-solid fa-folder-open text-4xl mb-3 text-slate-300"></i>
+                    <p class="text-base font-semibold">لا توجد بلاغات تذاكر مسجلة لهذه المنطقة حالياً</p>
+                </div>`;
+            } else {
+                tickets.forEach(t => {
+                    let borderCol = 'border-amber-200 bg-amber-50/20';
+                    let badgeColor = 'bg-amber-100 text-amber-700';
+                    if (t.status === 'تم إنجازه') {
+                        borderCol = 'border-emerald-200 bg-emerald-50/20';
+                        badgeColor = 'bg-emerald-100 text-emerald-700';
+                    }
+                    if (t.status === 'هنالك مشكلة') {
+                        borderCol = 'border-rose-200 bg-rose-50/20';
+                        badgeColor = 'bg-rose-100 text-rose-700';
+                    }
+                    if (t.status === 'مغلق من المفتش') {
+                        borderCol = 'border-slate-200 bg-slate-50';
+                        badgeColor = 'bg-slate-200 text-slate-700';
+                    }
+
+                    let imgBox = t.image ? `
+                        <div class="mb-3">
+                            <img src="${t.image}" onclick="openImageModal('${t.image}')" class="w-full h-32 object-cover rounded-xl cursor-pointer border shadow-xs" title="انقر لتكبير صورة التكت">
+                        </div>
+                    ` : '';
+
+                    let currentTechImgPreview = techBase64Temp[t.id] ? `
+                        <div class="relative inline-block mt-2">
+                            <img src="${techBase64Temp[t.id]}" class="h-20 rounded-lg object-cover border">
+                            <button type="button" onclick="clearTechImage('${t.id}')" class="absolute -top-2 -right-2 bg-rose-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px]"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    ` : '';
+
+                    let existingTechReport = (t.techComment || t.techImage) ? `
+                        <div class="bg-slate-50 p-2.5 rounded-xl border text-xs space-y-1 mb-2">
+                            <p class="font-bold text-slate-700">تقريرك السابق:</p>
+                            ${t.techComment ? `<p class="text-slate-600">${t.techComment}</p>` : ''}
+                            ${t.techImage ? `<img src="${t.techImage}" onclick="openImageModal('${t.techImage}')" class="w-16 h-16 rounded object-cover cursor-pointer border mt-1">` : ''}
+                        </div>
+                    ` : '';
+
+                    html += `
+                        <div class="bg-white rounded-2xl shadow-sm border ${borderCol} p-6 flex flex-col justify-between space-y-4">
+                            <div>
+                                <div class="flex justify-between items-start mb-3">
+                                    <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg">${t.id}</span>
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold ${badgeColor}">${t.status}</span>
+                                </div>
+                                <h3 class="font-bold text-slate-800 text-base mb-1"><i class="fa-solid fa-school ml-1 text-slate-400"></i> ${t.school}</h3>
+                                <p class="text-xs text-indigo-600 font-semibold mb-3"><i class="fa-solid fa-location-dot ml-1"></i> المنطقة: ${t.region} | الجهاز: ${t.device}</p>
+                                ${imgBox}
+                                ${existingTechReport}
+                            </div>
+
+                            <!-- Tech Comment & Photo Input Section -->
+                            <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2.5">
+                                <label class="block text-xs font-bold text-slate-700"><i class="fa-solid fa-pen-to-square ml-1 text-indigo-600"></i> إضافة تقرير الفني (وصف وصورة):</label>
+                                <textarea id="tech-comment-${t.id}" rows="2" placeholder="اكتب وصف المشكلة أو حالة الإصلاح..." class="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500">${t.techComment || ''}</textarea>
+                                <div class="flex items-center justify-between">
+                                    <label class="cursor-pointer bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+                                        <i class="fa-solid fa-camera ml-1 text-indigo-600"></i> تصوير/إرفاق صورة
+                                        <input type="file" accept="image/*" capture="environment" class="hidden" onchange="handleTechImageUpload(this, '${t.id}')">
+                                    </label>
+                                    <span class="text-[10px] text-slate-400">اختياري</span>
+                                </div>
+                                <div id="tech-preview-container-${t.id}">${currentTechImgPreview}</div>
+                            </div>
+
+                            <!-- Status Change Buttons -->
+                            <div class="border-t border-slate-100 pt-3">
+                                <label class="block text-xs font-semibold text-slate-600 mb-2">تحديث حالة الطلب:</label>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <button onclick="updateTicketWithTechReport('${t.id}', 'تحت الإجراء')" class="py-2 px-1 text-xs font-bold rounded-lg border transition ${t.status === 'تحت الإجراء' ? 'bg-amber-500 text-white border-amber-500' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'}">تحت الإجراء</button>
+                                    <button onclick="updateTicketWithTechReport('${t.id}', 'تم إنجازه')" class="py-2 px-1 text-xs font-bold rounded-lg border transition ${t.status === 'تم إنجازه' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'}">تم إنجازه</button>
+                                    <button onclick="updateTicketWithTechReport('${t.id}', 'هنالك مشكلة')" class="py-2 px-1 text-xs font-bold rounded-lg border transition ${t.status === 'هنالك مشكلة' ? 'bg-rose-600 text-white border-rose-600' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'}">مشكلة</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            container.innerHTML = html;
+        }
+
+        function handleTechImageUpload(input, ticketId) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    compressImage(e.target.result, 800, 0.7, function(compressed) {
+                        techBase64Temp[ticketId] = compressed;
+                        renderTechTickets();
+                    });
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function clearTechImage(ticketId) {
+            delete techBase64Temp[ticketId];
+            renderTechTickets();
+        }
+
+        function updateTicketWithTechReport(id, newStatus) {
+            let tickets = getTickets();
+            let index = tickets.findIndex(t => t.id === id);
+            if (index !== -1) {
+                let commentInput = document.getElementById(`tech-comment-${id}`);
+                if (commentInput) {
+                    tickets[index].techComment = commentInput.value.trim();
+                }
+                if (techBase64Temp[id]) {
+                    tickets[index].techImage = techBase64Temp[id];
+                }
+                tickets[index].status = newStatus;
+                saveTickets(tickets);
+                renderTechTickets();
+                alert('تم حفظ تقرير الفني وتحديث حالة التكت بنجاح!');
+            }
+        }
+
+        function renderExcelDatabaseView() {
+            let regions = getRegions();
+            let container = document.getElementById('excel-database-list');
+            let html = '';
+
+            Object.keys(regions).forEach(reg => {
+                let schools = regions[reg];
+                let schoolsHtml = schools.map(s => `
+                    <span class="inline-flex items-center bg-slate-50 border border-slate-200 text-slate-700 text-xs px-3 py-2 rounded-xl">
+                        <i class="fa-solid fa-school text-indigo-600 ml-1.5"></i> ${s}
+                    </span>
+                `).join('');
+
+                html += `
+                    <div class="bg-white border border-slate-200 rounded-2xl p-5 space-y-3 shadow-xs">
+                        <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                            <h3 class="font-bold text-slate-800 text-base"><i class="fa-solid fa-map-location-dot text-indigo-600 ml-2"></i> المنطقة: ${reg}</h3>
+                            <span class="text-xs bg-indigo-50 text-indigo-700 font-bold px-3 py-1 rounded-full">عدد المدارس: ${schools.length}</span>
+                        </div>
+                        <div class="flex flex-wrap gap-2 pt-2">${schoolsHtml}</div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function openImageModal(src) {
+            document.getElementById('modalImg').src = src;
+            document.getElementById('imageModal').classList.remove('hidden');
+        }
+
+        function closeImageModal() {
+            document.getElementById('imageModal').classList.add('hidden');
+        }
+
+        window.onload = function() {
+            let storedUser = sessionStorage.getItem('current_user');
+            if (storedUser) {
+                initApp();
+            }
+        };
+    </script>
+</body>
+</html>
