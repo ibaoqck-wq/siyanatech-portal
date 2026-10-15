@@ -162,7 +162,7 @@
             <!-- 2. ADMIN, SUPERVISOR & INSPECTOR TICKET UPLOAD TAB -->
             <section id="tab-admin" class="hidden max-w-2xl mx-auto bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
                 <div class="mb-6 border-b border-slate-100 pb-4">
-                    <h2 class="text-xl font-bold text-slate-800"><i class="fa-solid fa-camera-retro ml-2 text-indigo-600"></i>تصوير ورفع تكت (مطابقة مع الإكسل)</h2>
+                    <h2 class="text-xl font-bold text-slate-800"><i class="fa-solid fa-camera-retro ml-2 text-indigo-600"></i>تصوير ورفع وقراءة التكت</h2>
                     <p class="text-sm text-slate-500">التقط صورة التكت بالكاميرا أو ارفعها لتتم المطابقة التلقائية مع المدارس الـ 50</p>
                 </div>
                 
@@ -191,7 +191,7 @@
 
                         <div id="ocrLoading" class="hidden mt-4 text-indigo-600 text-sm font-bold flex items-center justify-center space-x-2 space-x-reverse">
                             <i class="fa-solid fa-spinner fa-spin"></i>
-                            <span>جارٍ معالجة الصورة ومطابقتها مع قاعدة بيانات الإكسل...</span>
+                            <span>جارٍ معالجة الصورة ومطابقتها مع المدارس والمناطق...</span>
                         </div>
 
                         <div id="imagePreviewContainer" class="mt-4 hidden text-center">
@@ -205,11 +205,11 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
                         <div>
                             <label class="block text-xs font-bold text-slate-600 mb-1">المنطقة المستخرجة:</label>
-                            <input type="text" id="autoRegion" readonly placeholder="تلقائي حسب الإكسل..." class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold text-indigo-700">
+                            <input type="text" id="autoRegion" readonly placeholder="تلقائي حسب البيانات..." class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold text-indigo-700">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-600 mb-1">المدرسة والرمز المستخرج:</label>
-                            <input type="text" id="autoSchool" readonly placeholder="تلقائي حسب الإكسل..." class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold text-indigo-700">
+                            <input type="text" id="autoSchool" readonly placeholder="تلقائي حسب البيانات..." class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold text-indigo-700">
                         </div>
                     </div>
 
@@ -250,10 +250,10 @@
                 <div id="inspector-tickets-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
             </section>
 
-            <!-- 4. EXCEL DATABASE INSPECTION TAB -->
+            <!-- 4. REGIONS & SCHOOLS DATABASE INSPECTION TAB -->
             <section id="tab-regions" class="hidden max-w-4xl mx-auto space-y-6">
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                    <h2 class="text-xl font-bold text-slate-800 mb-1"><i class="fa-solid fa-table ml-2 text-indigo-600"></i>قاعدة بيانات ملف الإكسل (جميع المدارس الـ 50 رسمياً)</h2>
+                    <h2 class="text-xl font-bold text-slate-800 mb-1"><i class="fa-solid fa-table ml-2 text-indigo-600"></i>المدارس والمناطق</h2>
                     <p class="text-sm text-slate-500 mb-6">استعراض المدارس الـ 50 ورموزها المعتمدة والموزعة على المناطق الـ 6</p>
 
                     <div id="excel-database-list" class="space-y-4"></div>
@@ -377,7 +377,7 @@
                 school: "الملك عبدالله الثانوية بالدمام [DMBS01]",
                 device: "شبكة وإنترنت",
                 supervisor: "حسن",
-                details: "مطابقة تلقائية مع ملف الإكسل (50 مدرسة)",
+                details: "مطابقة تلقائية مع نظام المدارس والمناطق",
                 image: "",
                 techComment: "",
                 techImage: "",
@@ -407,25 +407,25 @@
         }
 
         function getRegions() {
-            let stored = localStorage.getItem('siyana_tech_excel_db_v5');
+            let stored = localStorage.getItem('siyana_tech_excel_db_v6');
             if (!stored) {
-                localStorage.setItem('siyana_tech_excel_db_v5', JSON.stringify(excelSchoolsData));
+                localStorage.setItem('siyana_tech_excel_db_v6', JSON.stringify(excelSchoolsData));
                 return excelSchoolsData;
             }
             return JSON.parse(stored);
         }
 
         function getTickets() {
-            let stored = localStorage.getItem('siyana_tech_tickets_v5');
+            let stored = localStorage.getItem('siyana_tech_tickets_v6');
             if (!stored) {
-                localStorage.setItem('siyana_tech_tickets_v5', JSON.stringify(defaultTickets));
+                localStorage.setItem('siyana_tech_tickets_v6', JSON.stringify(defaultTickets));
                 return defaultTickets;
             }
             return JSON.parse(stored);
         }
 
         function saveTickets(tickets) {
-            localStorage.setItem('siyana_tech_tickets_v5', JSON.stringify(tickets));
+            localStorage.setItem('siyana_tech_tickets_v6', JSON.stringify(tickets));
         }
 
         function handleLogin(e) {
@@ -481,9 +481,9 @@
             if (currentUser.role === 'admin') {
                 html = `
                     <button onclick="switchTab('dashboard')" id="btn-dashboard" class="px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition bg-white text-indigo-700 shadow-sm"><i class="fa-solid fa-chart-pie ml-1"></i> لوحة التحكم</button>
-                    <button onclick="switchTab('admin')" id="btn-admin" class="px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition text-indigo-100 hover:text-white"><i class="fa-solid fa-camera-retro ml-1"></i> رفع وتصوير تكت</button>
+                    <button onclick="switchTab('admin')" id="btn-admin" class="px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition text-indigo-100 hover:text-white"><i class="fa-solid fa-camera-retro ml-1"></i> تصوير ورفع وقراءة التكت</button>
                     <button onclick="switchTab('inspector')" id="btn-inspector" class="px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition text-indigo-100 hover:text-white"><i class="fa-solid fa-clipboard-check ml-1"></i> بوابة المفتش</button>
-                    <button onclick="switchTab('regions')" id="btn-regions" class="px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition text-indigo-100 hover:text-white"><i class="fa-solid fa-table ml-1"></i> قاعدة الإكسل (50 مدرسة)</button>
+                    <button onclick="switchTab('regions')" id="btn-regions" class="px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition text-indigo-100 hover:text-white"><i class="fa-solid fa-table ml-1"></i> المدارس والمناطق</button>
                     <button onclick="switchTab('tech')" id="btn-tech" class="px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition text-indigo-100 hover:text-white"><i class="fa-solid fa-helmet-safety ml-1"></i> بوابة الفنيين</button>
                 `;
                 navContainer.innerHTML = html;
@@ -491,14 +491,14 @@
             } else if (currentUser.role === 'supervisor') {
                 html = `
                     <button onclick="switchTab('dashboard')" id="btn-dashboard" class="px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition bg-white text-indigo-700 shadow-sm"><i class="fa-solid fa-chart-pie ml-1"></i> لوحة التحكم</button>
-                    <button onclick="switchTab('admin')" id="btn-admin" class="px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition text-indigo-100 hover:text-white"><i class="fa-solid fa-camera-retro ml-1"></i> رفع وتصوير تكت</button>
+                    <button onclick="switchTab('admin')" id="btn-admin" class="px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition text-indigo-100 hover:text-white"><i class="fa-solid fa-camera-retro ml-1"></i> تصوير ورفع وقراءة التكت</button>
                 `;
                 navContainer.innerHTML = html;
                 switchTab('admin');
             } else if (currentUser.role === 'inspector') {
                 html = `
                     <button onclick="switchTab('dashboard')" id="btn-dashboard" class="px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition bg-white text-indigo-700 shadow-sm"><i class="fa-solid fa-chart-pie ml-1"></i> لوحة التحكم</button>
-                    <button onclick="switchTab('admin')" id="btn-admin" class="px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition text-indigo-100 hover:text-white"><i class="fa-solid fa-camera-retro ml-1"></i> رفع تكت</button>
+                    <button onclick="switchTab('admin')" id="btn-admin" class="px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition text-indigo-100 hover:text-white"><i class="fa-solid fa-camera-retro ml-1"></i> تصوير ورفع وقراءة التكت</button>
                     <button onclick="switchTab('inspector')" id="btn-inspector" class="px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition text-indigo-100 hover:text-white"><i class="fa-solid fa-clipboard-check ml-1"></i> بوابة المفتش والمراجعة</button>
                 `;
                 navContainer.innerHTML = html;
@@ -579,7 +579,7 @@
                             document.getElementById('autoRegion').value = matchedRegion;
                             document.getElementById('autoSchool').value = matchedSchool;
 
-                            showToast('⚡ تمت المطابقة مع قواعد البيانات بنجاح!');
+                            showToast('⚡ تمت القراءة والمطابقة مع المدارس والمناطق بنجاح!');
                         }, 800);
                     });
                 }
@@ -602,7 +602,7 @@
             const school = document.getElementById('autoSchool').value;
 
             if (!region || !school) {
-                showToast('الرجاء تصوير التكت أولاً لتتم المطابقة!', 'error');
+                showToast('الرجاء تصوير التكت أولاً لتتم القراءة والمطابقة!', 'error');
                 return;
             }
 
@@ -619,7 +619,7 @@
                 school,
                 device,
                 supervisor,
-                details: "مطابقة تلقائية مع قاعدة بيانات الإكسل (50 مدرسة)",
+                details: "مطابقة تلقائية مع نظام المدارس والمناطق",
                 image: base64ImageTemp,
                 techComment: "",
                 techImage: "",
