@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام إدارة صيانة مدارس المناطق - النسخة الشاملة (المفتش والفنيين)</title>
+    <title>منصة صيانة تِك (SiyanaTech) - النظام الشامل لإدارة صيانة المدارس</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome الأيقونات -->
@@ -23,19 +23,32 @@
     </script>
     <style>
         body { font-family: 'Cairo', sans-serif; }
+        /* Toast Animation */
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(20px); }
+            10% { opacity: 1; transform: translateY(0); }
+            90% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-20px); }
+        }
+        .toast-notification {
+            animation: fadeInOut 3s ease-in-out forwards;
+        }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- TOAST CONTAINER FOR ALERTS -->
+    <div id="toast-container" class="fixed bottom-5 left-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
     <!-- LOGIN SCREEN -->
     <div id="login-screen" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 space-y-6 border border-slate-100">
             <div class="text-center space-y-2">
                 <div class="bg-indigo-600 text-white w-16 h-16 rounded-2xl mx-auto flex items-center justify-center text-2xl shadow-lg shadow-indigo-100">
-                    <i class="fa-solid fa-shield-halved"></i>
+                    <i class="fa-solid fa-screwdriver-wrench"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-slate-800">تسجيل الدخول للنظام</h2>
-                <p class="text-xs text-slate-500">أدخل بياناتك للوصول إلى صلاحيات الإدارة، الإشراف، التفتيش، أو الفنيين</p>
+                <h2 class="text-2xl font-bold text-slate-800">منصة صيانة تِك (SiyanaTech)</h2>
+                <p class="text-xs text-slate-500">تسجيل الدخول للنظام الميداني المعتمد</p>
             </div>
 
             <form onsubmit="handleLogin(event)" class="space-y-4">
@@ -55,8 +68,8 @@
             <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs text-slate-600 space-y-1">
                 <p class="font-bold text-slate-700 mb-1"><i class="fa-solid fa-circle-info text-indigo-600 ml-1"></i> الحسابات التجريبية:</p>
                 <p>• <b>مدير النظام:</b> admin / 123</p>
-                <p>• <b>المشرف:</b> supervisor / 123</p>
-                <p>• <b>المفتش:</b> inspector / 123</p>
+                <p>• <b>المشرف الميداني:</b> supervisor / 123</p>
+                <p>• <b>المفتش العام (رفع ومراجعة):</b> inspector / 123</p>
                 <p>• <b>فني الدمام:</b> tech_dammam / 123</p>
             </div>
         </div>
@@ -71,7 +84,7 @@
                         <i class="fa-solid fa-screwdriver-wrench text-2xl text-amber-300"></i>
                     </div>
                     <div>
-                        <h1 class="text-xl font-bold">منصة صيانة الأجهزة المدرسية</h1>
+                        <h1 class="text-xl font-bold">منصة صيانة تِك (SiyanaTech)</h1>
                         <p id="user-role-badge" class="text-xs text-indigo-200">مرحباً بك</p>
                     </div>
                 </div>
@@ -112,7 +125,7 @@
                     </div>
                     <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
                         <div>
-                            <p class="text-sm text-slate-500 font-medium">يوجد مشكلة / مغلق</p>
+                            <p class="text-sm text-slate-500 font-medium">مشكلة / مغلق من المفتش</p>
                             <h3 id="stat-issue" class="text-2xl font-bold text-rose-600 mt-1">0</h3>
                         </div>
                         <div class="bg-rose-50 text-rose-600 p-3.5 rounded-xl"><i class="fa-solid fa-triangle-exclamation text-xl"></i></div>
@@ -120,9 +133,12 @@
                 </div>
 
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                    <div class="p-5 border-b border-slate-100 flex justify-between items-center">
+                    <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-3">
                         <h3 class="font-bold text-slate-800 text-lg"><i class="fa-solid fa-list-check ml-2 text-indigo-600"></i>أحدث البلاغات المسجلة في النظام</h3>
-                        <button onclick="loadData()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg transition"><i class="fa-solid fa-rotate ml-1"></i> تحديث</button>
+                        <div class="flex items-center gap-2">
+                            <button onclick="exportTicketsCSV()" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl transition flex items-center"><i class="fa-solid fa-file-excel ml-1"></i> تصدير تقارير الإكسل</button>
+                            <button onclick="loadData()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-2 rounded-xl transition"><i class="fa-solid fa-rotate ml-1"></i> تحديث</button>
+                        </div>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-right border-collapse">
@@ -143,10 +159,10 @@
                 </div>
             </section>
 
-            <!-- 2. ADMIN & SUPERVISOR / SMART TICKET UPLOAD TAB -->
+            <!-- 2. ADMIN, SUPERVISOR & INSPECTOR TICKET UPLOAD TAB -->
             <section id="tab-admin" class="hidden max-w-2xl mx-auto bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
                 <div class="mb-6 border-b border-slate-100 pb-4">
-                    <h2 class="text-xl font-bold text-slate-800"><i class="fa-solid fa-camera-retro ml-2 text-indigo-600"></i>رفع وتصوير تكت (مطابقة مع الإكسل)</h2>
+                    <h2 class="text-xl font-bold text-slate-800"><i class="fa-solid fa-camera-retro ml-2 text-indigo-600"></i>تصوير ورفع تكت (مطابقة مع الإكسل)</h2>
                     <p class="text-sm text-slate-500">التقط صورة التكت بالكاميرا أو ارفعها لتتم المطابقة التلقائية مع المدارس الـ 50</p>
                 </div>
                 
@@ -219,13 +235,16 @@
                 </form>
             </section>
 
-            <!-- 3. INSPECTOR PORTAL TAB (NEW) -->
+            <!-- 3. INSPECTOR PORTAL TAB -->
             <section id="tab-inspector" class="hidden space-y-6">
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
                     <div>
-                        <h2 class="text-xl font-bold text-slate-800"><i class="fa-solid fa-clipboard-check ml-2 text-indigo-600"></i>بوابة المفتش العام (مراجعة وإغلاق التذاكر)</h2>
-                        <p class="text-sm text-slate-500">متابعة حالة التذاكر بدقة وإغلاق الطلبات المنجزة بعد المراجعة النهائية</p>
+                        <h2 class="text-xl font-bold text-slate-800"><i class="fa-solid fa-clipboard-check ml-2 text-indigo-600"></i>بوابة المفتش العام (رفع، مراجعة وإغلاق التذاكر)</h2>
+                        <p class="text-sm text-slate-500">متابعة حالة التذاكر، رفع التذاكر الجديدة، وإغلاق الطلبات المنجزة بعد المراجعة النهائية</p>
                     </div>
+                    <button onclick="switchTab('admin')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center shadow-sm">
+                        <i class="fa-solid fa-camera-retro ml-1.5"></i> رفع تكت جديد
+                    </button>
                 </div>
 
                 <div id="inspector-tickets-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
@@ -267,7 +286,7 @@
         </div>
 
         <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500 mt-auto">
-            جميع الحقوق محفوظة - نظام إدارة صيانة المدارس © 2026
+            منصة صيانة تِك (SiyanaTech) - جميع الحقوق محفوظة © 2026
         </footer>
     </div>
 
@@ -370,26 +389,43 @@
         let base64ImageTemp = "";
         let techBase64Temp = {};
 
+        // Toast Notification System
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            let bgCol = 'bg-emerald-600';
+            if (type === 'error') bgCol = 'bg-rose-600';
+            if (type === 'info') bgCol = 'bg-indigo-600';
+
+            toast.className = `toast-notification ${bgCol} text-white px-5 py-3 rounded-2xl shadow-xl text-xs md:text-sm font-bold flex items-center space-x-2 space-x-reverse pointer-events-auto`;
+            toast.innerHTML = `<i class="fa-solid fa-circle-check ml-1.5"></i> ${message}`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
         function getRegions() {
-            let stored = localStorage.getItem('school_maintenance_excel_db_v4');
+            let stored = localStorage.getItem('siyana_tech_excel_db_v5');
             if (!stored) {
-                localStorage.setItem('school_maintenance_excel_db_v4', JSON.stringify(excelSchoolsData));
+                localStorage.setItem('siyana_tech_excel_db_v5', JSON.stringify(excelSchoolsData));
                 return excelSchoolsData;
             }
             return JSON.parse(stored);
         }
 
         function getTickets() {
-            let stored = localStorage.getItem('school_maintenance_tickets');
+            let stored = localStorage.getItem('siyana_tech_tickets_v5');
             if (!stored) {
-                localStorage.setItem('school_maintenance_tickets', JSON.stringify(defaultTickets));
+                localStorage.setItem('siyana_tech_tickets_v5', JSON.stringify(defaultTickets));
                 return defaultTickets;
             }
             return JSON.parse(stored);
         }
 
         function saveTickets(tickets) {
-            localStorage.setItem('school_maintenance_tickets', JSON.stringify(tickets));
+            localStorage.setItem('siyana_tech_tickets_v5', JSON.stringify(tickets));
         }
 
         function handleLogin(e) {
@@ -400,24 +436,26 @@
             let found = systemUsers.find(user => user.username === u && user.pass === p);
             if (found) {
                 currentUser = found;
-                sessionStorage.setItem('current_user', JSON.stringify(found));
+                sessionStorage.setItem('siyana_current_user', JSON.stringify(found));
                 initApp();
+                showToast(`مرحباً بك ${found.name}`, 'info');
             } else {
-                alert('اسم المستخدم أو كلمة المرور غير صحيحة!');
+                showToast('اسم المستخدم أو كلمة المرور غير صحيحة!', 'error');
             }
         }
 
         function logout() {
-            sessionStorage.removeItem('current_user');
+            sessionStorage.removeItem('siyana_current_user');
             currentUser = null;
             document.getElementById('app-wrapper').classList.add('hidden');
             document.getElementById('login-screen').classList.remove('hidden');
             document.getElementById('login-user').value = '';
             document.getElementById('login-pass').value = '';
+            showToast('تم تسجيل الخروج بنجاح', 'info');
         }
 
         function initApp() {
-            let storedUser = sessionStorage.getItem('current_user');
+            let storedUser = sessionStorage.getItem('siyana_current_user');
             if (!storedUser) return;
             currentUser = JSON.parse(storedUser);
 
@@ -541,7 +579,7 @@
                             document.getElementById('autoRegion').value = matchedRegion;
                             document.getElementById('autoSchool').value = matchedSchool;
 
-                            alert('⚡ تمت مطابقة التكت مع المدارس الـ 50 واستخراج البيانات بنجاح!');
+                            showToast('⚡ تمت المطابقة مع قواعد البيانات بنجاح!');
                         }, 800);
                     });
                 }
@@ -564,7 +602,8 @@
             const school = document.getElementById('autoSchool').value;
 
             if (!region || !school) {
-                return alert('الرجاء تصوير التكت أولاً لتتم المطابقة مع قاعدة بيانات الإكسل!');
+                showToast('الرجاء تصوير التكت أولاً لتتم المطابقة!', 'error');
+                return;
             }
 
             const device = document.getElementById('deviceType').value;
@@ -592,10 +631,11 @@
             tickets.unshift(newTicket);
             saveTickets(tickets);
 
-            alert('تم إرسال التكت المطابق بنجاح لفني المنطقة المعني!');
+            showToast('تم إرسال التكت بنجاح لفني المنطقة!');
             document.getElementById('ticketForm').reset();
             clearImage();
-            if (currentUser.role === 'admin' || currentUser.role === 'inspector') switchTab('dashboard');
+            if (currentUser.role === 'admin' || currentUser.role === 'supervisor') switchTab('dashboard');
+            if (currentUser.role === 'inspector') switchTab('inspector');
         }
 
         function loadData() {
@@ -636,6 +676,22 @@
                 });
             }
             document.getElementById('recent-tickets-table').innerHTML = tableHtml;
+        }
+
+        // Export Tickets to CSV / Excel
+        function exportTicketsCSV() {
+            let tickets = getTickets();
+            let csvContent = "\uFEFFرقم التكت,المنطقة,المدرسة,نوع الجهاز,المُبلغ,الحالة,التاريخ\n";
+            tickets.forEach(t => {
+                csvContent += `"${t.id}","${t.region}","${t.school}","${t.device}","${t.supervisor}","${t.status}","${t.date}"\n`;
+            });
+            let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            let url = URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.href = url;
+            a.download = `SiyanaTech_Tickets_${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+            showToast('تم تصدير ملف التقارير بنجاح!', 'success');
         }
 
         // Inspector Portal View (Review & Close Tickets)
@@ -710,7 +766,7 @@
                 tickets[index].status = "مغلق من المفتش";
                 saveTickets(tickets);
                 renderInspectorTickets();
-                alert('تمت مراجعة التكت وإغلاقه بنجاح بواسطة المفتظ!');
+                showToast('تمت مراجعة التكت وإغلاقه بنجاح بواسطة المفتش!', 'success');
             }
         }
 
@@ -869,7 +925,7 @@
                 tickets[index].status = newStatus;
                 saveTickets(tickets);
                 renderTechTickets();
-                alert('تم حفظ تقرير الفني وتحديث حالة التكت بنجاح!');
+                showToast('تم حفظ التقرير وتحديث الحالة بنجاح!', 'success');
             }
         }
 
@@ -909,7 +965,7 @@
         }
 
         window.onload = function() {
-            let storedUser = sessionStorage.getItem('current_user');
+            let storedUser = sessionStorage.getItem('siyana_current_user');
             if (storedUser) {
                 initApp();
             }
